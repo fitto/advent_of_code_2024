@@ -1,11 +1,8 @@
-import re
-from typing import List, Dict
+from typing import List
 
 
 def read_file(file_name: str) -> List[List[str]]:
     text_table = []
-
-    pattern = r'XMAS'
 
     with open(file_name, "r") as file:
         for line in file:
@@ -64,7 +61,7 @@ def find_strings(text_table: List[List[str]],
 #     print(f'{x1} : {x[x1]}')
 
 # x = read_file('data/test1.txt')
-x = read_file('data/task1.txt')
+read_file = read_file('data/task1.txt')
 
-z = find_strings(x)
-print(z)
+found_strings = find_strings(read_file)
+print(found_strings)

@@ -3,18 +3,11 @@ from typing import List
 
 
 def read_file(file_name: str) -> List[str]:
-    pattern = r'mul\(\d{1,3},\d{1,3}\)'
-    txt_to_analyze = []
-
-
     output = []
 
     with open(file_name, "r") as file:
         for line in file:
-
-
-
-
+            # noinspection Annotator
             strings_split = re.split("don't()|do()", line)
             output = [element for element in strings_split if element != '' and element is not None]
             print(output)

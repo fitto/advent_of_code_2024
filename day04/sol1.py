@@ -5,8 +5,6 @@ from typing import List, Dict
 def read_file(file_name: str) -> List[List[str]]:
     text_table = []
 
-    pattern = r'XMAS'
-
     with open(file_name, "r") as file:
         for line in file:
             row = []
@@ -124,16 +122,15 @@ def find_strings(text_tables: Dict[str, List[List[str]]],
 #     print(f'{x1} : {x[x1]}')
 
 # x = read_file('data/test1.txt')
-x = read_file('data/task1.txt')
+read_file = read_file('data/task1.txt')
 # print(x)
-y = prepare_all_tables(x)
+prepared_tables = prepare_all_tables(read_file)
 # for x1 in y.keys():
 #     print(f'{x1} : {y[x1]}')
 
 # print(y)
 
-z = find_strings(y,
-                 ['XMAS', 'SAMX']
-                 )
-print(z)
-
+found_strings = find_strings(prepared_tables,
+                             ['XMAS', 'SAMX']
+                             )
+print(found_strings)

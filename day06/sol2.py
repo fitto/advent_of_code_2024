@@ -1,6 +1,5 @@
 import copy
-import re
-from typing import List, Dict, Tuple, Set
+from typing import List, Tuple, Set
 
 
 def read_file(file_name: str) -> list[list[str]]:

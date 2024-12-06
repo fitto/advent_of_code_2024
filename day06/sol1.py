@@ -1,5 +1,4 @@
-import re
-from typing import List, Dict
+from typing import List
 
 
 def read_file(file_name: str) -> list[list[str]]:
@@ -83,11 +82,11 @@ def print_plot(plot: List[list[str]]):
     print('')
 
 
-x = read_file('data/test1.txt')
+read_file = read_file('data/test1.txt')
 # x = read_file('data/task1.txt')
-y = find_guard(x)
-z = move(x, y)
-print(z)
+guard_pos = find_guard(read_file)
+move_output = move(read_file, guard_pos)
+print(move_output)
 # y = read_updates_file('data/task1_data.txt')
 
 # --5176
