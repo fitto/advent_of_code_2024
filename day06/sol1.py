@@ -82,10 +82,10 @@ def print_plot(plot: List[list[str]]):
     print('')
 
 
-read_file = read_file('data/test1.txt')
+read_file_data = read_file('data/test1.txt')
 # x = read_file('data/task1.txt')
-guard_pos = find_guard(read_file)
-move_output = move(read_file, guard_pos)
+guard_pos = find_guard(read_file_data)
+move_output = move(read_file_data, guard_pos)
 print(move_output)
 # y = read_updates_file('data/task1_data.txt')
 

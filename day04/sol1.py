@@ -122,9 +122,9 @@ def find_strings(text_tables: Dict[str, List[List[str]]],
 #     print(f'{x1} : {x[x1]}')
 
 # x = read_file('data/test1.txt')
-read_file = read_file('data/task1.txt')
+read_file_data = read_file('data/task1.txt')
 # print(x)
-prepared_tables = prepare_all_tables(read_file)
+prepared_tables = prepare_all_tables(read_file_data)
 # for x1 in y.keys():
 #     print(f'{x1} : {y[x1]}')
 

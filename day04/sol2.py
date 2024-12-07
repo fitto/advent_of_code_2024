@@ -61,7 +61,7 @@ def find_strings(text_table: List[List[str]],
 #     print(f'{x1} : {x[x1]}')
 
 # x = read_file('data/test1.txt')
-read_file = read_file('data/task1.txt')
+read_file_data = read_file('data/task1.txt')
 
-found_strings = find_strings(read_file)
+found_strings = find_strings(read_file_data)
 print(found_strings)

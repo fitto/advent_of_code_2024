@@ -63,11 +63,20 @@ def analyze_item(left: int,
         # print(next_item)
         # print(multiply(current_outcome, next_item))
 
-        return analyze_item(
+        analyze_item_output = analyze_item(
             left,
             multiply(current_outcome, next_item),
             new_list
         )
+
+        if analyze_item_output:
+            return analyze_item_output
+        else:
+            return analyze_item(
+                left,
+                combine(current_outcome, next_item),
+                new_list
+            )
 
 
 def add(a: int, b: int) -> int:
@@ -76,6 +85,10 @@ def add(a: int, b: int) -> int:
 
 def multiply(a: int, b: int) -> int:
     return a * b
+
+
+def combine(a: int, b: int) -> int:
+    return int(str(a) + str(b))
 
 
 # read_file_data = read_file('data/test1.txt')
