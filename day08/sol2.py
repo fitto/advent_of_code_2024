@@ -1,6 +1,4 @@
-import re
-from os.path import samefile
-from typing import List, Dict, Tuple, Any, Set
+from typing import List, Tuple
 
 
 class Antena:
@@ -34,7 +32,6 @@ class Antena:
         if self.second_coordinate == other_antena.second_coordinate:
             return True
 
-        diagonal_1 = []
         cor_1, cor_2 = self.first_coordinate, self.second_coordinate
 
         while cor_1 < 51 and cor_2 > 0:
