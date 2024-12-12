@@ -84,7 +84,7 @@
 #         if self.area == 1 or self.area == 2:
 #             return None
 #         else:
-#             wall_places = set()
+#             wall_places `= set()
 #             for place in self.places:
 #                 for x in place_neighbours_all(place):
 #                     if not check_if_in_place(len(this_place[0]), len(this_place), x):
