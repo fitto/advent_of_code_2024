@@ -1,5 +1,6 @@
-from dataclasses import dataclass
-from typing import List, Tuple, Optional
+import copy
+from dataclasses import dataclass, field
+from typing import List, Tuple, Optional, Set
 
 from day15.s2.domain.big_box import BigBox
 from day15.s2.domain.coordinates import Coordinates
@@ -9,13 +10,15 @@ from day15.s2.domain.wall import Wall
 from day15.s2.domain.world_object import WorldObject
 
 
+# noinspection PyUnresolvedReferences
 @dataclass(frozen=True)
 class World:
     robot_position: Coordinates
     places_as_table: List[List[WorldObject]]
+    seen_coordinates: Set = field(default_factory=set, init=False)
 
     @property
-    def no_walls(self):
+    def walls_count(self) -> int:
         all_obj = set()
 
         for ii in range(self.height()):
@@ -26,7 +29,7 @@ class World:
         return len(all_obj)
 
     @property
-    def no_big_boxes(self):
+    def big_boxes_count(self) -> int:
         all_obj = set()
 
         for ii in range(self.height()):
@@ -36,69 +39,81 @@ class World:
                     all_obj.add(found_object)
         return len(all_obj)
 
-    def width(self, row: int = 0):
+    def width(self, row: int = 0) -> int:
         return len(self.places_as_table[row])
 
-    def height(self):
+    def height(self) -> int:
         return len(self.places_as_table)
 
-    def has_coordinates(self, coordinates: Coordinates) -> bool:
-        x1 = coordinates.first
-        x2 = coordinates.second
-
-        return -1 < x1 < self.height() and -1 < x2 < self.width()
-
-    def object_at(self, coordinates: Coordinates):
+    def object_at(self,
+                  coordinates: Coordinates
+                  ) -> WorldObject:
         return self.places_as_table[coordinates.first][coordinates.second]
 
-    def move_objects(self, objects_list: List[WorldObject], direction: Tuple) -> 'World':
-        new_places_as_table_copy = self.places_as_table.copy()
-        # print(objects_list)
+    def move_objects(self,
+                     objects_list: List[WorldObject],
+                     direction: Tuple
+                     ) -> 'World':
+        # new_places_as_table = copy.deepcopy(self.places_as_table)
+        new_places_as_table = self.places_as_table
+        new_objects_list = copy.deepcopy(objects_list)
 
-        while len(objects_list) > 1:
-            moving_object = objects_list.pop(-1)
-            new_obj = moving_object.moved(direction)
-            # print(f'moving {moving_object.__repr__()}')
-            # print(f' to {new_obj.__repr__()}')
+        for obj in new_objects_list:
+            if not isinstance(obj, BigBox):
+                print(f' sth is wrong  {obj}')
 
             # /purge old
-            new_places_as_table_copy[moving_object.current_coordinates_1.first][
-                moving_object.current_coordinates_1.second] = Nothing(
-                moving_object.current_coordinates_1)
+            new_places_as_table[obj.current_coordinates_1.first][
+                obj.current_coordinates_1.second] = Nothing(
+                obj.current_coordinates_1
+            )
+            new_places_as_table[obj.current_coordinates_2.first][
+                obj.current_coordinates_2.second] = Nothing(
+                obj.current_coordinates_2
+            )
 
-            new_places_as_table_copy[moving_object.current_coordinates_2.first][
-                moving_object.current_coordinates_2.second] = Nothing(
-                moving_object.current_coordinates_2)
+        # print(f' to be moved: {new_objects_list}')
+        while len(new_objects_list) > 0:
+            old_box = new_objects_list.pop(-1)
+            if isinstance(old_box, BigBox):
+                new_box = old_box.moved(direction)
+                # print(f' to  {new_box.__repr__()}')
 
-            # /create new object after move
-            new_places_as_table_copy[new_obj.current_coordinates_1.first][
-                new_obj.current_coordinates_1.second] = new_obj
+                # # /purge old
+                # new_places_as_table[old_box.current_coordinates_1.first][
+                #     old_box.current_coordinates_1.second] = Nothing(
+                #     old_box.current_coordinates_1
+                # )
+                # new_places_as_table[old_box.current_coordinates_2.first][
+                #     old_box.current_coordinates_2.second] = Nothing(
+                #     old_box.current_coordinates_2
+                # )
 
-            new_places_as_table_copy[new_obj.current_coordinates_2.first][
-                new_obj.current_coordinates_2.second] = new_obj
+                # move to new
+                new_places_as_table[new_box.current_coordinates_1.first][
+                    new_box.current_coordinates_1.second] = new_box
+                new_places_as_table[new_box.current_coordinates_2.first][
+                    new_box.current_coordinates_2.second] = new_box
 
-        moving_object = objects_list.pop(-1)
-        if not isinstance(moving_object, Robot):
-            print('ALARMO !!!!!! !!!!!! !!!!!')
-        new_robot = moving_object.moved(direction)
+            else:
+                print(f' found sth that this not a Box to be moved {old_box}')
 
-        new_places_as_table_copy[new_robot.current_coordinates.first][new_robot.current_coordinates.second] = new_robot
+        this_robot_current_pos = self.object_at(self.robot_position)
+        if not isinstance(this_robot_current_pos, Robot):
+            print(f' not found robot where it should be {this_robot_current_pos}')
+            self.visualize()
+        new_robot = this_robot_current_pos.moved(direction)
 
-        new_places_as_table_copy[moving_object.current_coordinates.first][
-            moving_object.current_coordinates.second] = Nothing(
-            moving_object.current_coordinates)
+        new_places_as_table[self.robot_position.first][self.robot_position.second] = Nothing(
+            self.robot_position)
+        new_places_as_table[new_robot.current_coordinates.first][
+            new_robot.current_coordinates.second] = new_robot
 
-        new_world = World(new_robot.current_coordinates, new_places_as_table_copy)
-        new_walls = new_world.no_walls
-        new_boxes = new_world.no_big_boxes
+        new_world = World(new_robot.current_coordinates, new_places_as_table)
 
-        if new_boxes == self.no_big_boxes and new_walls == self.no_walls:
-            return new_world
-        else:
-            print('error')
+        return new_world
 
-
-    def robot_move(self, move: str) -> 'World':
+    def execute_move(self, move: str) -> 'World':
         command_switch = {
             "<": (0, -1),
             "^": (-1, 0),
@@ -107,108 +122,74 @@ class World:
         }
         tpl = command_switch[move]
 
-        moving_objects = [self.object_at(self.robot_position)]
-        if not isinstance(moving_objects[-1], Robot):
-            print('ALARMO')
+        current_robot = self.object_at(self.robot_position)
 
-        new_coord = moving_objects[-1]
-        while True:
-            # print(new_coord)
+        if not isinstance(current_robot, Robot):
+            self.visualize()
+            print('    did not find robot where it was supposed to be')
 
-            new_coord = new_coord.current_coordinates.shifted_coordinates(tpl[0], tpl[1])
-            found_object = self.object_at(new_coord)
-            # print(f'    {found_object}')
+        # if isinstance(self.object_at(current_robot.current_coordinates.shifted_coordinates(tpl[0], tpl[1])), Nothing):
+        #     return self.move_objects([], tpl)
 
-            if isinstance(found_object, Nothing):
-                # moving_objects.append(found_object)
-                return self.move_objects(moving_objects, tpl)
+        list_of_moving_obj = self.list_of_all_moving_objects(
+            current_robot.current_coordinates.shifted_coordinates(tpl[0], tpl[1]),
+            tpl
+        )
 
-            if isinstance(found_object, BigBox):
-                list_of_moving_obj = self.list_of_all_moving_objects(found_object, tpl, moving_objects)
-                # print(f' --- found list_of_moving_obj {list_of_moving_obj}')
-                if list_of_moving_obj is None:
-                    return self
-                else:
-                    for x in list_of_moving_obj:
-                        if x not in moving_objects and not isinstance(x, Nothing):
-                            moving_objects.append(x)
-
-                    return self.move_objects(moving_objects, tpl)
-
-            if isinstance(found_object, Wall):
-                return self
-            else:
-                print('WEIRD')
-                print(found_object)
+        if list_of_moving_obj is None:
+            return World(current_robot.current_coordinates, self.places_as_table)
+        else:
+            return self.move_objects(list_of_moving_obj, tpl)
 
     def list_of_all_moving_objects(self,
-                                   world_object: WorldObject,
-                                   move: Tuple,
-                                   moving_objects_list: List[WorldObject]
+                                   coordinates_to_be_checked: Coordinates,
+                                   move_direction: Tuple,
                                    ) -> Optional[List[WorldObject]]:
-        new_moving_objects_list = [x for x in moving_objects_list]
+        moved_objects = set()
 
-        if isinstance(world_object, Wall):
-            return None
-        elif isinstance(world_object, BigBox):
-            return self.moving_objcts_by_big_box(world_object, move, new_moving_objects_list)
-        elif isinstance(world_object, Nothing):
-            # new_moving_objects_list.append(world_object)
-            return new_moving_objects_list
+        coord_list_to_be_checked = [coordinates_to_be_checked]
+        seen_coord = set()
 
-    def moving_objcts_by_big_box(self,
-                                 big_box: BigBox,
-                                 move: Tuple,
-                                 moving_objects_list: List[WorldObject]) -> Optional[List[WorldObject]]:
-        new_moving_objects_list = [x for x in moving_objects_list]
-        new_moving_objects_list.append(big_box)
-        # print(f'  appending{big_box.__repr__()}')
+        while len(coord_list_to_be_checked) > 0:
+            this_coord = coord_list_to_be_checked.pop()
+            this_obj = self.object_at(this_coord)
 
-        if move[0] != 0:
-            new_big_box = big_box.moved(move)
-
-            coord1 = new_big_box.current_coordinates_1
-            obj_at_coord1 = self.object_at(coord1)
-            coord2 = new_big_box.current_coordinates_2
-            obj_at_coord2 = self.object_at(coord2)
-
-            moving_objects_list_1 = [x for x in new_moving_objects_list]
-            moving_objects_list_1.append(obj_at_coord1)
-
-            m1 = self.list_of_all_moving_objects(obj_at_coord1, move, moving_objects_list_1)
-            if m1 is None:
+            if isinstance(this_obj, Wall):
                 return None
+            elif isinstance(this_obj, BigBox):
+                moved_objects.add(this_obj)
 
-            # if obj_at_coord1 != obj_at_coord2:
-            moving_objects_list_2 = [x for x in new_moving_objects_list]
-            moving_objects_list_2.append(obj_at_coord2)
+                coord1 = this_obj.current_coordinates_1.shifted_coordinates(move_direction[0],
+                                                                            move_direction[1])
 
-            m2 = self.list_of_all_moving_objects(self.object_at(coord2), move, moving_objects_list_2)
-            if m2 is None:
-                return None
+                coord2 = this_obj.current_coordinates_2.shifted_coordinates(move_direction[0],
+                                                                            move_direction[1])
 
-            for x in m1:
-                new_moving_objects_list.append(x)
+                if move_direction[0] != 0:
+                    if coord1 not in seen_coord:
+                        coord_list_to_be_checked.append(coord1)
+                    if coord2 not in seen_coord:
+                        coord_list_to_be_checked.append(coord2)
 
-            for y in m2:
-                new_moving_objects_list.append(y)
+                else:
+                    if move_direction[1] == -1:
+                        new_coordinates = coord1
+                    else:
+                        new_coordinates = coord2
 
-            return new_moving_objects_list
+                    if new_coordinates not in seen_coord:
+                        coord_list_to_be_checked.append(new_coordinates)
 
-        if move[1] == -1:
-            new_obj_at_coordinates = self.object_at(big_box.current_coordinates_1.shifted_coordinates(move[0], move[1]))
-        else:
-            new_obj_at_coordinates = self.object_at(big_box.current_coordinates_2.shifted_coordinates(move[0], move[1]))
-        # if isinstance(new_obj_at_coordinates, Wall):
-        #     return None
+            seen_coord.add(this_coord)
 
-        new_moving_objects_list.append(big_box)
+        output = []
+        for x in moved_objects:
+            if not isinstance(x, BigBox):
+                print(f' encountered {x}')
+            else:
+                output.append(x)
 
-        return self.list_of_all_moving_objects(
-            new_obj_at_coordinates,
-            move,
-            new_moving_objects_list
-        )
+        return output
 
     @staticmethod
     def from_list(this_list: List[List[str]]):
@@ -256,6 +237,6 @@ class World:
             for jj in range(self.width()):
                 found_object = self.places_as_table[ii][jj]
                 if isinstance(found_object, BigBox):
-                    all_big_boxes.add(found_object)
+                    all_big_boxes.add(found_object.current_coordinates_1)
 
         return sum([x.coord_value for x in all_big_boxes])
