@@ -22,3 +22,10 @@ class BigBox(WorldObject):
             self.current_coordinates_1.shifted_coordinates(move[0], move[1]),
             self.current_coordinates_2.shifted_coordinates(move[0], move[1])
         )
+
+    @property
+    def coord_value(self):
+        return  min(100 * self.current_coordinates_1.first + self.current_coordinates_1.second,
+                    100 * self.current_coordinates_2.first + self.current_coordinates_2.second
+                    )
+        # return self.current_coordinates_1.coord_value
