@@ -1,4 +1,4 @@
-from typing import Dict, Set
+from typing import Dict, Set, List
 
 from day16.domain.coordinates import Coordinates
 from day16.domain.position import Position
@@ -64,40 +64,58 @@ def find_all_paths(starting_pos: Position,
 
 def dijkstra(graph: Dict[Position, Dict[Position, int]],
              start: Position
-             ) -> dict[Position, float]:
+             ) -> tuple[dict[Position, float], Dict[Position, List[Position]]]:
     distances = {node: float('inf') for node in graph.keys()}
     distances[start] = 0
 
-    # Priority queue as a standard list
-    priority_queue = [(0, start)]  # (distance, node)
+    nodes_before_this = {node: [] for node in graph}
+
+    priority_queue = [(0, start)]
 
     while priority_queue:
-        # Sort the list by distance and pop the smallest element
-        priority_queue.sort(key=lambda x: x[0])  # Sort by distance (O(n log n))
-        current_distance, current_node = priority_queue.pop(0)  # Remove the smallest (O(1))
+        priority_queue.sort(key=lambda x: x[0])
+        current_distance, current_node = priority_queue.pop(0)
 
         if current_distance > distances[current_node]:
             continue
 
-        # Explore neighbors
         for neighbor, weight in graph[current_node].items():
             distance = current_distance + weight
             if distance < distances[neighbor]:
                 distances[neighbor] = distance
-                priority_queue.append((distance, neighbor))  # Add new entry (O(1))
+                nodes_before_this[neighbor] = [current_node]
+                priority_queue.append((distance, neighbor))
+            elif distance == distances[neighbor]:
+                nodes_before_this[neighbor].append(current_node)
 
-    return distances
+    return distances, nodes_before_this
+
+
+def reconstruct_all_paths(before_dict: Dict[Position, List[Position]],
+                          start: Position,
+                          end: Position
+                          ) -> List[List[Position]]:
+    def backtrack(path):
+        if path[-1] == start:
+            all_paths.append(path[::-1])
+            return
+        for pred in before_dict[path[-1]]:
+            backtrack(path + [pred])
+
+    all_paths = []
+    backtrack([end])
+    return all_paths
 
 
 # start, end, all_walls_positions = find_key_points('data/22.txt')
 start, end, all_walls_positions = find_key_points('data/task1.txt')
-print(f'start coord {start}')
-print(f'end coord {end}')
+# print(f'start coord {start}')
+# print(f'end coord {end}')
 
 start_position = Position(start, '>')
 pths = find_all_paths(start_position, all_walls_positions)
 
-sp = dijkstra(pths, start_position)
+path_weigths, back_dict = dijkstra(pths, start_position)
 
 end_positions = [
     Position(end, '>'),
@@ -106,11 +124,24 @@ end_positions = [
     Position(end, 'v')
 ]
 
-m = float('inf')
+min_wigth = float('inf')
 for x in end_positions:
-    gt_o = sp.get(x, -1)
+    gt_o = path_weigths.get(x, -1)
     print(f'{x.__repr__()}: {gt_o}')
-    if gt_o < m:
-        m = gt_o
+    if gt_o < min_wigth:
+        min_wigth = gt_o
 
-print(m)
+print(min_wigth)
+
+all_pos = set()
+for x in end_positions:
+    this_weigth = path_weigths.get(x, -1)
+    if this_weigth == min_wigth:
+        positions_list = reconstruct_all_paths(back_dict, start_position, x)
+        for this_list in positions_list:
+            for pi in this_list:
+                all_pos.add(pi.coordinates)
+
+        # print(len(all_pos))
+
+print(len(all_pos))
