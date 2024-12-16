@@ -63,17 +63,17 @@ def find_all_paths(starting_pos: Position,
 
 
 def dijkstra(graph: Dict[Position, Dict[Position, int]],
-             start: Position
+             start_pos: Position
              ) -> tuple[dict[Position, float], Dict[Position, List[Position]]]:
     distances = {node: float('inf') for node in graph.keys()}
-    distances[start] = 0
+    distances[start_pos] = 0
 
     nodes_before_this = {node: [] for node in graph}
 
-    priority_queue = [(0, start)]
+    priority_queue = [(0, start_pos)]
 
     while priority_queue:
-        priority_queue.sort(key=lambda x: x[0])
+        priority_queue.sort(key=lambda xx: xx[0])
         current_distance, current_node = priority_queue.pop(0)
 
         if current_distance > distances[current_node]:
@@ -91,19 +91,33 @@ def dijkstra(graph: Dict[Position, Dict[Position, int]],
     return distances, nodes_before_this
 
 
+COORD_MEM = set()
+
+
 def reconstruct_all_paths(before_dict: Dict[Position, List[Position]],
-                          start: Position,
-                          end: Position
+                          start_maze_pos: Position,
+                          end_maze_pos: Position
                           ) -> List[List[Position]]:
+    memory = {}
+
     def backtrack(path):
-        if path[-1] == start:
+        to_be_checked = path[-1]
+        COORD_MEM.add(to_be_checked.coordinates)
+
+        if to_be_checked in memory.keys():
+            return memory[to_be_checked]
+
+        if to_be_checked == start_maze_pos:
             all_paths.append(path[::-1])
             return
+
         for pred in before_dict[path[-1]]:
             backtrack(path + [pred])
 
+        memory[to_be_checked] = all_paths
+
     all_paths = []
-    backtrack([end])
+    backtrack([end_maze_pos])
     return all_paths
 
 
@@ -138,10 +152,13 @@ for x in end_positions:
     this_weigth = path_weigths.get(x, -1)
     if this_weigth == min_wigth:
         positions_list = reconstruct_all_paths(back_dict, start_position, x)
-        for this_list in positions_list:
-            for pi in this_list:
-                all_pos.add(pi.coordinates)
+
+        # for this_list in positions_list:
+        #     for pi in this_list:
+        #         all_pos.add(pi.coordinates)
 
         # print(len(all_pos))
 
-print(len(all_pos))
+# print(len(all_pos))
+print(len(COORD_MEM))
+# --546
