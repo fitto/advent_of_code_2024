@@ -175,9 +175,11 @@ while True:
 
         # adv
         if instruction_number == 0:
+            print(f' b {this_register_bin['A']}')
             this_register_bin['A'] = \
                 division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
             instruction_pointer += 2
+            # print(f' a {this_register_bin['A']}')
 
         # bxl
         elif instruction_number == 1:
@@ -208,20 +210,15 @@ while True:
 
         # bdv
         elif instruction_number == 6:
-            print('66666666666666')
             this_register_bin['B'] = \
-            division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
+                division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
 
             instruction_pointer += 2
 
         # cdv
         elif instruction_number == 7:
-            print('777777777777777777')
-            print(f'       this_register_bin[A] {this_register_bin['A']}')
-            print(f'       operand_as_bit {operand_as_bit}')
-
             this_register_bin['C'] = \
-            division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
+                division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
 
             instruction_pointer += 2
         else:
