@@ -2,7 +2,6 @@ import copy
 from typing import Any, Tuple
 
 from day17.helpers.h2 import ALL_A_ENDINGS
-from day17.helpers.h2 import STR_LNGTH
 
 
 def to_bin(number: int) -> str:
@@ -143,21 +142,23 @@ def is_binary_zero(binary_string) -> bool:
 # original_this_register_bin, original_this_program_input_bin = read_all('data/22.txt')
 original_this_register_bin, original_this_program_input_bin = read_all('data/task1.txt')
 
+DEBUG = False
+
 int_found = None
-i_as_bin_prefix = (3 * 16 - 1 - STR_LNGTH) * '0'
-i_as_bin_prefix = '1' + i_as_bin_prefix
+# i_as_bin_prefix = (3 * 16 - 1 - STR_LNGTH) * '0'
+# i_as_bin_prefix = '1' + i_as_bin_prefix
+#  i_as_bin_prefix = '11100000100000000010101000100111'
 iterations = 0
 
 this_register_bin = {x: y for x, y in original_this_register_bin.items()}
 this_program_input_bin = copy.deepcopy(original_this_program_input_bin)
 
 while int_found is None:
-
     for i_as_bin_suffix in ALL_A_ENDINGS:
-        this_i_in_bit = i_as_bin_prefix + i_as_bin_suffix
+        this_i_in_bit = i_as_bin_prefix
+        # + i_as_bin_suffix)
         this_register_bin['A'] = this_i_in_bit
         # print(f'checking {this_is_in_bit}')
-        # this_register_bin['A'] = '100000000000000000000000000001110111111111100010'
 
         if len(this_register_bin) > 48:
             print('PROBLEM')
@@ -175,77 +176,99 @@ while int_found is None:
 
                 # adv
                 if instruction_number == 0:
-                    # print(f'doing 0 output saved to A is {division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]}')
-                    # print(operand_as_bit)
-                    # print(get_combo_operand_bin(operand_as_bit))
-                    # print(power_bin(get_combo_operand_bin(operand_as_bit)))
+                    if DEBUG:
+                        print(
+                            f'doing 0 output saved to A is {division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]}')
+                        print(operand_as_bit)
+                        print(get_combo_operand_bin(operand_as_bit))
+                        print(power_bin(get_combo_operand_bin(operand_as_bit)))
 
                     this_register_bin['A'] = \
-                        division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
+                    division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
                     instruction_pointer += 2
 
                 # bxl
                 elif instruction_number == 1:
-                    # print(f'doing 1 output set to B is {xor_bin(this_register_bin['B'], operand_as_bit)}')
+                    if DEBUG:
+                        print(f'doing 1 output set to B is {xor_bin(this_register_bin['B'], operand_as_bit)}')
                     this_register_bin['B'] = xor_bin(this_register_bin['B'], operand_as_bit)
                     instruction_pointer += 2
 
                 # bst
                 elif instruction_number == 2:
-                    # print(f'doing 2 output set to B is {modulo_bin(get_combo_operand_bin(operand_as_bit))}')
+                    if DEBUG:
+                        print(f'doing 2 output set to B is {modulo_bin(get_combo_operand_bin(operand_as_bit))}')
                     this_register_bin['B'] = modulo_bin(get_combo_operand_bin(operand_as_bit))
                     instruction_pointer += 2
 
                 # jnz
                 elif instruction_number == 3:
+                    if DEBUG:
+                        print(f'doing 3 output A is {this_register_bin['A']}')
                     if is_binary_zero(this_register_bin['A']):
+                        if DEBUG:
+                            print(f'so adding 2')
                         instruction_pointer += 2
                     else:
                         instruction_pointer = to_int(operand_as_bit)
+                        if DEBUG:
+                            print(f'so instruction_pointer={to_int(operand_as_bit)}')
 
                 # bxc
                 elif instruction_number == 4:
-                    # print(f'doing 4 output set to B is {xor_bin(this_register_bin['B'], this_register_bin['C'])}')
+                    if DEBUG:
+                        print(f'doing 4 output set to B is {xor_bin(this_register_bin['B'], this_register_bin['C'])}')
                     this_register_bin['B'] = xor_bin(this_register_bin['B'], this_register_bin['C'])
                     instruction_pointer += 2
 
                 # out
                 elif instruction_number == 5:
-                    # print(f'doing 5 output is {modulo_bin(get_combo_operand_bin(operand_as_bit))}')
+                    if DEBUG:
+                        print(f'doing 5 output is {modulo_bin(get_combo_operand_bin(operand_as_bit))}')
                     output_bin.append(modulo_bin(get_combo_operand_bin(operand_as_bit)))
 
                     if to_int(output_bin[0]) != 2:
-                        print(this_i_in_bit)
+                        # print(this_i_in_bit)
                         print('STH Went wrong')
-                        break
+                        if DEBUG:
+                            print('LEAVING')
+                        # break
 
                     if len(output_bin) > len(original_this_program_input_bin):
                         iterations += 1
                         instruction_pointer += 1000
-                        break
+                        if DEBUG:
+                            print('LEAVING')
+                        # break
 
                     for n in range(len(output_bin)):
                         if output_bin[n] != original_this_program_input_bin[n]:
                             # print('pruning')
                             iterations += 1
                             instruction_pointer += 1000
-                            break
+                            if DEBUG:
+                                print('LEAVING')
+                            # break
                     # print(output_bin)
 
                     instruction_pointer += 2
 
                 # bdv
                 elif instruction_number == 6:
+                    if DEBUG:
+                        print(f'doing 6')
                     this_register_bin['B'] = \
-                        division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
+                    division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
 
                     instruction_pointer += 2
 
                 # cdv
                 elif instruction_number == 7:
-                    # print(f'doing 7 output set to C is {division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]}')
+                    if DEBUG:
+                        print(
+                            f'doing 7 output set to C is {division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]}')
                     this_register_bin['C'] = \
-                        division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
+                    division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
 
                     instruction_pointer += 2
                 else:
@@ -263,7 +286,7 @@ while int_found is None:
     i_as_bin_prefix = to_bin(to_int(i_as_bin_prefix) + 1)
 
     iterations += 1
-    if iterations % 100000 == 0:
+    if iterations % 10 == 0:
         print(f'i = {iterations} and output_bin is {this_i_in_bit} which is {[to_int(x) for x in output_bin]}')
 
 print(int_found)
