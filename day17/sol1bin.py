@@ -208,12 +208,21 @@ while True:
 
         # bdv
         elif instruction_number == 6:
-            this_register_bin['B'] = division_bin(this_register_bin['A'], power_bin(operand_as_bit))[0]
+            print('66666666666666')
+            this_register_bin['B'] = \
+            division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
+
             instruction_pointer += 2
 
         # cdv
         elif instruction_number == 7:
-            this_register_bin['C'] = division_bin(this_register_bin['A'], power_bin(operand_as_bit))[0]
+            print('777777777777777777')
+            print(f'       this_register_bin[A] {this_register_bin['A']}')
+            print(f'       operand_as_bit {operand_as_bit}')
+
+            this_register_bin['C'] = \
+            division_bin(this_register_bin['A'], power_bin(get_combo_operand_bin(operand_as_bit)))[0]
+
             instruction_pointer += 2
         else:
             print(f'ARALRMO {instruction_number}')
@@ -224,8 +233,29 @@ while True:
 output_nomal = [to_int(x) for x in output_bin]
 print(','.join(map(str, output_nomal)))
 
+print(this_register_bin)
+
 print('hurray!')
 
 # 0,0,0,0,0,0,0,0,0
 # 1,7,7,0,5,7,3,2,7
 # 7,7,4,6,3,2,4,2,7
+
+# alt
+# 3,3,3,7,7,7,4,3,6
+
+# normal
+# 6,0,3,6,6,5,7,0,0
+
+
+# n1 = '1100'
+# n2 = '1010'
+#
+# print(to_int(n1))
+# print(to_int(n2))
+# print(to_int(n1) ^ to_int(n2))
+#
+# print(n1)
+# print(n2)
+# print(xor_bin(n1, n2))
+# print(to_int(xor_bin(n1, n2)))
