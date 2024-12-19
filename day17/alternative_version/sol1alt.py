@@ -97,7 +97,7 @@ def division_bin(dividend, divisor) -> Tuple[str, str]:
 
 
 # this_register_bin, this_program_input_bin = read_all('data/11.txt')
-this_register_bin, this_program_input_bin = read_all('data/task1.txt')
+this_register_bin, this_program_input_bin = read_all('../data/task1.txt')
 
 output_bin = []
 while this_register_bin['A'] != '0':

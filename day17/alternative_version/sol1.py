@@ -47,7 +47,7 @@ def get_combo_operand(input_operand_bin: int) -> int:
 
 
 # this_register, this_program_input = read_all('data/11.txt')
-this_register, this_program_input = read_all('data/task1.txt')
+this_register, this_program_input = read_all('../data/task1.txt')
 
 # # # TEST1
 # this_register_bin = {'C': '1001'}
