@@ -37,7 +37,7 @@ def c_in_map(coordinates: Coordinates) -> bool:
 
 
 def find_all_paths(starting_coord: Coordinates,
-                   fallen_bytes_coordinates: List[Coordinates],
+                   all_walls_coordinates: List[Coordinates],
                    ) -> Dict[Coordinates, Dict[Coordinates, int]]:
     output = {}
     seen_positions = set()
@@ -48,9 +48,11 @@ def find_all_paths(starting_coord: Coordinates,
         this_position = positions_to_be_checked.pop()
         if this_position not in seen_positions:
             seen_positions.add(this_position)
+
             next_postion_options = this_position.neighbouring_coordinates
             next_postion_options = [Coordinates(x[0], x[1]) for x in next_postion_options]
-            next_postion_options = [x for x in next_postion_options if x not in fallen_bytes_coordinates]
+
+            next_postion_options = [x for x in next_postion_options if x not in all_walls_coordinates]
             next_postion_options = [x for x in next_postion_options if c_in_map(x)]
             next_postion_options_map = {x: 1 for x in next_postion_options}
 
@@ -167,12 +169,18 @@ def reconstruct_all_paths(before_dict: Dict[Coordinates, List[Coordinates]],
 
 # start, end, all_walls_positions, mh, mw = find_key_points('data/11.txt')
 start, end, all_walls_positions, mh, mw = find_key_points('data/task1.txt')
+print(f'start {start}')
+print(f'end {end}')
+print(f'all_walls_positions {len(all_walls_positions)}')
 
 MIN_H = 0
 MAX_H = mh
+print(f'MAX_H {MAX_H}')
 
 MIN_W = 0
 MAX_W = mw
+print(f'MAX_W {MAX_W}')
+
 
 # ----------------------------
 # CALCULATING TRUE SHORTEST PATH
@@ -186,71 +194,57 @@ EXPECTED_SHORTER_BY = 100
 threshold = initial_cost_no_cheats - EXPECTED_SHORTER_BY
 print(f'initial_cost_no_cheats={initial_cost_no_cheats} and threshold is {threshold}')
 
-all_shortest_path_coords_neigbouting_coordinates: Set[Coordinates] = set()
-for coord_on_shortest_path in shortest_path:
-    coord_on_shortest_path_neigbour_tuples = coord_on_shortest_path.neighbouring_coordinates
+shortest_path_to_traverse = copy.deepcopy(shortest_path)
 
-    for this_neighbour_tuple in coord_on_shortest_path_neigbour_tuples:
-        this_coordinate_cand = Coordinates(this_neighbour_tuple[0], this_neighbour_tuple[1])
+candidates_to_check = set()
+while len(shortest_path_to_traverse) > 0:
+    place_to_check = shortest_path_to_traverse.pop()
 
-        # if is on map and is a wall
-        if (this_coordinate_cand not in shortest_path
-                and c_in_map(this_coordinate_cand)
-                and this_coordinate_cand in all_walls_positions):
-            all_shortest_path_coords_neigbouting_coordinates.add(this_coordinate_cand)
+    if 0 < place_to_check.first < MAX_H + 1 and 0 < place_to_check.second < MAX_W + 1:
+        place_to_check_neigbours = place_to_check.neighbouring_coordinates
+        for neighbour_tpl in place_to_check_neigbours:
+            first_neigbour = Coordinates(neighbour_tpl[0], neighbour_tpl[1])
+            if first_neigbour in all_walls_positions and c_in_map(first_neigbour):
 
-print(
-    f'found={len(all_shortest_path_coords_neigbouting_coordinates)} distinct all_shortest_paht_coords_neighbours on the map')
+                second_neigbour = first_neigbour.shifted_coordinates(place_to_check.first - first_neigbour.first,
+                                                                     place_to_check.second - first_neigbour.second
+                                                                     )
 
-# all_walls_positions = ALL_WALLS_POSITIONS
-# all_paths = ALL_PATHS
+                if second_neigbour not in all_walls_positions and c_in_map(second_neigbour):
+                    candidates_to_check.add(first_neigbour)
 
-possible_removals: Set[frozenset[Coordinates]] = set()
-# find_all_wall_to_dissapear_candidates_pairs(all_walls_positions))
-for x in all_walls_positions:
-    # if wall neighbouring to the shortest path and is valid
-    if x in all_shortest_path_coords_neigbouting_coordinates:
-        nc = x.neighbouring_coordinates
-        nc = [Coordinates(x[0], x[1]) for x in nc]
-
-        nc_that_are_walls = [x for x in nc if x in all_walls_positions]
-
-        # if this candidate does not border with 3 other walls where removal does not change anything
-        if len(nc_that_are_walls) < 3:
-            nc_that_are_outside = [x for x in nc if not c_in_map(x)]
-
-            # if this is not a border wall
-            if len(nc_that_are_outside) > 0:
-                this_set = frozenset([x])
-
-                possible_removals.add(this_set)
+print(f'found {len(candidates_to_check)} candidates_to_check')
 
 solutions_count = 0
 i = 0
-print(f'found {len(possible_removals)} possible_removals')
-for element_frozenset in possible_removals:
-
+for wall_to_be_removed in candidates_to_check:
     if i % 100 == 0:
-        print(f'analyzing {element_frozenset} - {i}')
+        print(f'analyzing {wall_to_be_removed} - {i}')
     i += 1
 
-    this_coord_to_be_removed = next(iter(element_frozenset))
+    # all_wall_positions_with_cheat = copy.deepcopy(all_walls_positions)
+    # all_wall_positions_with_cheat = [x for x in all_wall_positions_with_cheat if x != this_candidate]
+    #
+    # all_paths_with_cheat = find_all_paths(start, all_wall_positions_with_cheat)
 
     all_paths_with_cheat = copy.deepcopy(all_paths)
-    element_coord_neighbours = this_coord_to_be_removed.neighbouring_coordinates
 
-    for nbr in element_coord_neighbours:
-        nbr_coord = Coordinates(nbr[0], nbr[1])
-        if nbr_coord not in all_walls_positions and c_in_map(nbr_coord):
-            current_dict_for_nb = all_paths_with_cheat.get(nbr_coord, {})
-            current_dict_for_nb[this_coord_to_be_removed] = 1
+    removed_wall_neighbour_coordinates = wall_to_be_removed.neighbouring_coordinates
+    for removed_wall_neighbour_coord in removed_wall_neighbour_coordinates:
+        this_wall_beighbour = Coordinates(removed_wall_neighbour_coord[0], removed_wall_neighbour_coord[1])
+        # print(f'this_wall_beighbour {this_wall_beighbour}')
+        if this_wall_beighbour not in all_walls_positions and c_in_map(this_wall_beighbour):
+            current_dict_for_nb = all_paths_with_cheat.get(this_wall_beighbour, {})
+            current_dict_for_nb[wall_to_be_removed] = 1
 
-            all_paths_with_cheat[nbr_coord] = current_dict_for_nb
+            all_paths_with_cheat[this_wall_beighbour] = current_dict_for_nb
 
-            current_dict_for_nb2 = all_paths_with_cheat.get(this_coord_to_be_removed, {})
-            current_dict_for_nb2[nbr_coord] = 1
+            current_dict_for_nb2 = all_paths_with_cheat.get(wall_to_be_removed, {})
+            current_dict_for_nb2[this_wall_beighbour] = 1
 
-            all_paths_with_cheat[this_coord_to_be_removed] = current_dict_for_nb
+            all_paths_with_cheat[wall_to_be_removed] = current_dict_for_nb2
+
+    # print(all_paths_with_cheat[wall_to_be_removed])
 
     if has_path_shorter_than(all_paths_with_cheat, start, end, int(threshold)):
         solutions_count += 1
