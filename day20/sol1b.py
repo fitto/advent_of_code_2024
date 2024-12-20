@@ -190,7 +190,7 @@ distance, shortest_path = dijkstra_between(all_paths, start, end)
 
 initial_cost_no_cheats = int(distance)
 
-EXPECTED_SHORTER_BY = 100
+EXPECTED_SHORTER_BY = 1
 threshold = initial_cost_no_cheats - EXPECTED_SHORTER_BY
 print(f'initial_cost_no_cheats={initial_cost_no_cheats} and threshold is {threshold}')
 
@@ -246,9 +246,14 @@ for wall_to_be_removed in candidates_to_check:
 
     # print(all_paths_with_cheat[wall_to_be_removed])
 
-    if has_path_shorter_than(all_paths_with_cheat, start, end, int(threshold)):
+    option_outcome, _ = dijkstra_between(all_paths_with_cheat, start, end)
+    if initial_cost_no_cheats - option_outcome >= EXPECTED_SHORTER_BY:
         solutions_count += 1
+    # if has_path_shorter_than(all_paths_with_cheat, start, end, int(threshold)):
+    #     solutions_count += 1
 
 print(solutions_count)
 # --437
 #  --0
+# 1418
+# --6904
