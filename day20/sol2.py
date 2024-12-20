@@ -1,4 +1,5 @@
 import copy
+import time
 from typing import Dict, Set, List, Tuple
 
 from day16.domain.coordinates import Coordinates
@@ -72,6 +73,35 @@ def find_all_paths(starting_coord: Coordinates,
     return output
 
 
+def dijkstra(graph: Dict[Coordinates, Dict[Coordinates, int]],
+             start_pos: Coordinates
+             ) -> tuple[dict[Coordinates, float], Dict[Coordinates, List[Coordinates]]]:
+    distances = {node: float('inf') for node in graph.keys()}
+    distances[start_pos] = 0
+
+    nodes_before_this = {node: [] for node in graph}
+
+    priority_queue = [(0, start_pos)]
+
+    while priority_queue:
+        priority_queue.sort(key=lambda xx: xx[0])
+        current_distance, current_node = priority_queue.pop(0)
+
+        if current_distance > distances[current_node]:
+            continue
+
+        for neighbor, weight in graph[current_node].items():
+            distance = current_distance + weight
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                nodes_before_this[neighbor] = [current_node]
+                priority_queue.append((distance, neighbor))
+            elif distance == distances[neighbor]:
+                nodes_before_this[neighbor].append(current_node)
+
+    return distances, nodes_before_this
+
+
 def dijkstra_between(
         graph: Dict[Coordinates, Dict[Coordinates, int]],
         start: Coordinates,
@@ -106,9 +136,6 @@ def dijkstra_between(
     return float('inf'), []
 
 
-COORD_MEM = set()
-
-
 def reconstruct_all_paths(before_dict: Dict[Coordinates, List[Coordinates]],
                           start_maze_pos: Coordinates,
                           end_maze_pos: Coordinates) -> List[List[Coordinates]]:
@@ -134,9 +161,13 @@ def reconstruct_all_paths(before_dict: Dict[Coordinates, List[Coordinates]],
     return all_paths
 
 
-start, end, all_walls_positions, mh, mw = find_key_points('data/11.txt')
-# start, end, all_walls_positions, mh, mw = find_key_points('data/task1.txt')
-EXPECTED_SHORTER_BY = 1
+COORD_MEM = set()
+
+last_time = time.time()
+# start, end, all_walls_positions, mh, mw = find_key_points('data/11.txt')
+start, end, all_walls_positions, mh, mw = find_key_points('data/task1.txt')
+EXPECTED_SHORTER_BY = 100
+CHEAT_LENGTH = 20
 
 print(f'start {start}')
 print(f'end {end}')
@@ -154,64 +185,73 @@ print(f'MAX_W {MAX_W}')
 # CALCULATING TRUE SHORTEST PATH
 # ----------------------------
 all_paths = find_all_paths(start, list(all_walls_positions))
-distance, shortest_path = dijkstra_between(all_paths, start, end)
+all_path_prices, back_track_dict = dijkstra(all_paths, end)
 
-initial_cost_no_cheats = int(distance)
+initial_cost_no_cheats = all_path_prices[start]
+
+shortest_path_coords_list = reconstruct_all_paths(back_track_dict, end, start)[0]
 
 threshold = initial_cost_no_cheats - EXPECTED_SHORTER_BY
-print(f'initial_cost_no_cheats={initial_cost_no_cheats} and threshold is {threshold}')
 
-shortest_path_to_traverse = copy.deepcopy(shortest_path)
+this_time = time.time()
+time_diff = this_time - last_time
+last_time = this_time
 
-candidates_to_check = set()
-while len(shortest_path_to_traverse) > 0:
-    shortest_path_to_traverse.reverse()
-    place_to_check = shortest_path_to_traverse.pop()
+print(
+    f'initial_cost_no_cheats={initial_cost_no_cheats} and threshold is {threshold} - calculated in {time_diff:.2f} seconds')
 
-    if 0 < place_to_check.first < MAX_H + 1 and 0 < place_to_check.second < MAX_W + 1:
-        place_to_check_neigbours = place_to_check.neighbouring_coordinates
-        for neighbour_tpl in place_to_check_neigbours:
-            first_neigbour = Coordinates(neighbour_tpl[0], neighbour_tpl[1])
-            if first_neigbour in all_walls_positions:
+shortest_path_to_traverse = copy.deepcopy(shortest_path_coords_list)
+shortest_path_to_traverse.reverse()
 
-                second_neigbour = first_neigbour.shifted_coordinates(first_neigbour.first - place_to_check.first,
-                                                                     first_neigbour.second - place_to_check.second
-                                                                     )
+steps_so_far = -1
+shrter_paths = 0
+all_paths_with_cheat = copy.deepcopy(all_paths)
 
-                if second_neigbour not in all_walls_positions and c_in_map(second_neigbour):
-                    candidates_to_check.add(first_neigbour)
+# ----------------------------
+# CALCULATING THeoretical_Paths - no walls
+# ----------------------------
+ALL_PATHS_THEORETICAL_BELOW_THRESHOLD_MEM = {}
+for i in range(MAX_H + 1):
+    for j in range(MAX_H + 1):
+        this_coord = Coordinates(i, j)
+        if this_coord not in all_walls_positions:
+            all_paths_theoretical = find_all_paths(this_coord, [])
+            distances_theoretical, _ = dijkstra(all_paths_theoretical, this_coord)
 
-print(f'found {len(candidates_to_check)} candidates_to_check')
+            distances_in_cheat_length = {key: value for key, value in distances_theoretical.items() if
+                                         CHEAT_LENGTH >= value > 0
+                                         and key not in all_walls_positions
+                                         }
 
-solutions_count = 0
+            ALL_PATHS_THEORETICAL_BELOW_THRESHOLD_MEM[this_coord] = distances_in_cheat_length
+
+this_time = time.time()
+time_diff = this_time - last_time
+last_time = this_time
+print(
+    f'Claculted ALL_PATHS_THEORETICAL_BELOW_THRESHOLD_MEM in  {time_diff:.2f} seconds')
+
 i = 0
-for wall_to_be_removed in candidates_to_check:
+while len(shortest_path_to_traverse) > 0:
+    place_to_check = shortest_path_to_traverse.pop(0)
+    steps_so_far += 1
     if i % 100 == 0:
-        print(f'analyzing {wall_to_be_removed} - {i} and solutions_count is {solutions_count}')
+        this_time = time.time()
+        time_diff = this_time - last_time
+        last_time = this_time
+        print(
+            f'traversing {place_to_check} - {i} and {len(shortest_path_to_traverse)} remaining - last iter lasted {time_diff:.2f} seconds')
     i += 1
 
-    all_paths_with_cheat = copy.deepcopy(all_paths)
+    # print(place_to_check)
 
-    removed_wall_neighbour_coordinates = wall_to_be_removed.neighbouring_coordinates
-    for removed_wall_neighbour_coord in removed_wall_neighbour_coordinates:
-        this_wall_beighbour = Coordinates(removed_wall_neighbour_coord[0], removed_wall_neighbour_coord[1])
-        if this_wall_beighbour not in all_walls_positions and c_in_map(this_wall_beighbour):
-            current_dict_for_nb = all_paths_with_cheat.get(this_wall_beighbour, {})
-            current_dict_for_nb[wall_to_be_removed] = 1
+    possible_coordinates_and_costs_dict = ALL_PATHS_THEORETICAL_BELOW_THRESHOLD_MEM[place_to_check]
 
-            all_paths_with_cheat[this_wall_beighbour] = current_dict_for_nb
+    for place_to_check_key, place_to_check_cheat_length in possible_coordinates_and_costs_dict.items():
+        remianing_dist = all_path_prices[place_to_check_key]
+        if remianing_dist + steps_so_far + place_to_check_cheat_length <= threshold:
+            print(
+                f'   place_to_check_key {place_to_check_key}, place_to_check_cheat_length {place_to_check_cheat_length}')
+            shrter_paths += 1
 
-            current_dict_for_nb2 = all_paths_with_cheat.get(wall_to_be_removed, {})
-            current_dict_for_nb2[this_wall_beighbour] = 1
-
-            all_paths_with_cheat[wall_to_be_removed] = current_dict_for_nb2
-
-    option_outcome, _ = dijkstra_between(all_paths_with_cheat, start, end)
-    if initial_cost_no_cheats - option_outcome > EXPECTED_SHORTER_BY:
-        solutions_count += 1
-
-print(solutions_count)
-# --437
-#  --0
-# 1418
-# --6904
+print(shrter_paths)

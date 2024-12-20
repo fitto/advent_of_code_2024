@@ -200,7 +200,7 @@ def visualize(all_walls_positions: List[Coordinates],
 
 
 # start, end, all_walls_positions, mh, mw = find_key_points('data/11.txt')
-start, end, all_walls_positions, mh, mw = find_key_points('task1.txt')
+start, end, all_walls_positions, mh, mw = find_key_points('../data/task1.txt')
 
 print(f'start coord {start}')
 print(f'end coord {end}')
