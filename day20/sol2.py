@@ -212,18 +212,22 @@ all_paths_with_cheat = copy.deepcopy(all_paths)
 # ----------------------------
 ALL_PATHS_THEORETICAL_BELOW_THRESHOLD_MEM = {}
 for i in range(MAX_H + 1):
-    for j in range(MAX_H + 1):
+    print(f'looking at i={i}')
+
+    for j in range(MAX_W + 1):
         this_coord = Coordinates(i, j)
+        distances_in_cheat_length = {}
         if this_coord not in all_walls_positions:
-            all_paths_theoretical = find_all_paths(this_coord, [])
-            distances_theoretical, _ = dijkstra(all_paths_theoretical, this_coord)
 
-            distances_in_cheat_length = {key: value for key, value in distances_theoretical.items() if
-                                         CHEAT_LENGTH >= value > 0
-                                         and key not in all_walls_positions
-                                         }
+            for x in range(max(0, i - CHEAT_LENGTH - 1), min(MAX_H + 1, i + CHEAT_LENGTH + 1)):
+                for y in range(max(0, j - CHEAT_LENGTH - 1), min(MAX_W + 1, j + CHEAT_LENGTH + 1)):
+                    distance = abs(x - i) + abs(y - j)
+                    if distance <= CHEAT_LENGTH:
+                        this_coord_nbr = Coordinates(x, y)
+                        if this_coord_nbr not in all_walls_positions and c_in_map(this_coord_nbr):
+                            distances_in_cheat_length[this_coord_nbr] = distance
 
-            ALL_PATHS_THEORETICAL_BELOW_THRESHOLD_MEM[this_coord] = distances_in_cheat_length
+        ALL_PATHS_THEORETICAL_BELOW_THRESHOLD_MEM[this_coord] = distances_in_cheat_length
 
 this_time = time.time()
 time_diff = this_time - last_time
@@ -235,7 +239,7 @@ i = 0
 while len(shortest_path_to_traverse) > 0:
     place_to_check = shortest_path_to_traverse.pop(0)
     steps_so_far += 1
-    if i % 100 == 0:
+    if i % 10 == 0:
         this_time = time.time()
         time_diff = this_time - last_time
         last_time = this_time
@@ -250,8 +254,8 @@ while len(shortest_path_to_traverse) > 0:
     for place_to_check_key, place_to_check_cheat_length in possible_coordinates_and_costs_dict.items():
         remianing_dist = all_path_prices[place_to_check_key]
         if remianing_dist + steps_so_far + place_to_check_cheat_length <= threshold:
-            print(
-                f'   place_to_check_key {place_to_check_key}, place_to_check_cheat_length {place_to_check_cheat_length}')
+            # print(
+            #     f'   place_to_check_key {place_to_check_key}, place_to_check_cheat_length {place_to_check_cheat_length}')
             shrter_paths += 1
 
 print(shrter_paths)
