@@ -1,3 +1,4 @@
+import copy
 from typing import Dict, Set, List, Tuple
 
 from day16.domain.coordinates import Coordinates
@@ -115,6 +116,67 @@ def dijkstra(graph: Dict[Coordinates, Dict[Coordinates, int]],
     return distances, nodes_before_this
 
 
+def has_path_shorter_than(
+        graph: Dict[Coordinates, Dict[Coordinates, int]],
+        start_pos: Coordinates,
+        end_pos: Coordinates,
+        max_length: int
+) -> bool:
+    distances = {node: float('inf') for node in graph.keys()}
+    distances[start_pos] = 0
+    priority_queue = [(0, start_pos)]
+
+    while priority_queue:
+        priority_queue.sort(key=lambda x: x[0])
+        current_distance, current_node = priority_queue.pop(0)
+
+        if current_distance >= max_length:
+            continue
+
+        if current_node == end_pos and current_distance < max_length:
+            return True
+
+        for neighbor, weight in graph[current_node].items():
+            distance = current_distance + weight
+
+            if distance >= max_length:
+                continue
+
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                priority_queue.append((distance, neighbor))
+
+    return False
+
+
+COORD_MEM = set()
+
+
+def reconstruct_all_paths(before_dict: Dict[Coordinates, List[Coordinates]],
+                          start_maze_pos: Coordinates,
+                          end_maze_pos: Coordinates) -> List[List[Coordinates]]:
+    stack = [(end_maze_pos, [end_maze_pos])]
+    all_paths = []
+    visited = set()
+
+    while stack:
+        current, path = stack.pop()
+
+        if current == start_maze_pos:
+            all_paths.append(path[::-1])
+            continue
+
+        if current in visited:
+            continue
+
+        visited.add(current)
+
+        for predecessor in before_dict.get(current, []):
+            stack.append((predecessor, path + [predecessor]))
+
+    return all_paths
+
+
 def visualize(all_walls_positions: List[Coordinates],
               start_coord: Coordinates,
               end_coord: Coordinates
@@ -149,75 +211,95 @@ print(f'end coord {end}')
 
 MIN_H = 0
 MAX_H = mh
-# print(MIN_H)
-# print(MAX_H)
 
 MIN_W = 0
 MAX_W = mw
-# print(MIN_W)
-# print(MAX_W)
 
+# ----------------------------
+# CALCULATING TRUE SHORTEST PATH
+# ----------------------------
 all_paths = find_all_paths(start, list(all_walls_positions))
-dj, _ = dijkstra(all_paths, start)
+dj, back_dict = dijkstra(all_paths, start)
 
 all_shortest_paths = dj[end]
 initial_cost_no_cheats = all_shortest_paths
-print(f'initial_cost_no_cheats={initial_cost_no_cheats}')
+# MOCK
+# initial_cost_no_cheats = 9376
+threshold = initial_cost_no_cheats - 100
+print(f'initial_cost_no_cheats={initial_cost_no_cheats} and threshold is {threshold}')
 
-MAX_H = end.first + 11
-# print(MIN_H)
-# print(MAX_H)
+all_shortest_path_coords_list = reconstruct_all_paths(back_dict, start, end)
+print(f'found={len(all_shortest_path_coords_list)} all_shortest_paht_coords_lists')
 
-MAX_W = end.second + 11
-# print(MIN_W)
-# print(MAX_W)
+all_shortest_path_coords: Set[Coordinates] = set()
+for this_shortes_path_coords_list in all_shortest_path_coords_list:
+    for this_shortes_path_coord in this_shortes_path_coords_list:
+        all_shortest_path_coords.add(this_shortes_path_coord)
 
-all_walls_positions = [x for x in all_walls_positions if
-                       0 <= x.first < MAX_H and 0 <= x.second < MAX_W]
+all_shortest_path_coords_neigbouting_coordinates: Set[Coordinates] = set()
+for coord_on_shortest_path in all_shortest_path_coords:
+    coord_on_shortest_path_neigbour_tuples = coord_on_shortest_path.neighbouring_coordinates
 
-possible_removals = set()
+    for this_neighbour_tuple in coord_on_shortest_path_neigbour_tuples:
+        this_coordinate_cand = Coordinates(this_neighbour_tuple[0], this_neighbour_tuple[1])
+        if this_coordinate_cand not in all_shortest_path_coords and c_in_map(this_coordinate_cand):
+            all_shortest_path_coords_neigbouting_coordinates.add(this_coordinate_cand)
+
+print(
+    f'found={len(all_shortest_path_coords_neigbouting_coordinates)} distinct all_shortest_paht_coords_neighbours on the map')
+
+# all_walls_positions = ALL_WALLS_POSITIONS
+# all_paths = ALL_PATHS
+
+possible_removals: Set[frozenset[Coordinates]] = set()
 # find_all_wall_to_dissapear_candidates_pairs(all_walls_positions))
 for x in all_walls_positions:
-    nc = x.neighbouring_coordinates
-    nc = [Coordinates(x[0], x[1]) for x in nc]
+    # if wall neighbouring to the shortest path and is valid
+    if x in all_shortest_path_coords_neigbouting_coordinates:
+        nc = x.neighbouring_coordinates
+        nc = [Coordinates(x[0], x[1]) for x in nc]
 
-    nc_that_are_walls = [x for x in nc if x in all_walls_positions]
-    if len(nc_that_are_walls) < 3:
-        nc_that_are_outside = [x for x in nc if not c_in_map(x)]
-        if len(nc_that_are_outside) > 0:
-            this_set = {x}
-            this_set = frozenset(this_set)
+        nc_that_are_walls = [x for x in nc if x in all_walls_positions]
 
-            possible_removals.add(this_set)
+        # if this candidate does ntio border with 3 other walls where removal does not change anything
+        if len(nc_that_are_walls) < 3:
+            nc_that_are_outside = [x for x in nc if not c_in_map(x)]
 
-solutions = {}
+            # if this is not a border wall
+            if len(nc_that_are_outside) > 0:
+                this_set = frozenset([x])
+
+                possible_removals.add(this_set)
+
+solutions_count = 0
 i = 0
 print(f'found {len(possible_removals)} possible_removals')
-for element in possible_removals:
-    print(f'analyzing {element} - {i}')
+for element_frozenset in possible_removals:
+
+    if i % 10 == 0:
+        print(f'analyzing {element_frozenset} - {i}')
     i += 1
 
-    element_list = list(element)
-    # if Coordinates(7, 10) in element and len(element) == 1:
-    #     print('checking')
+    this_coord_to_be_removed = next(iter(element_frozenset))
 
-    all_walls_positions_removed = [x for x in all_walls_positions if x not in element_list]
+    all_paths_with_cheat = copy.deepcopy(all_paths)
+    element_coord_neighbours = this_coord_to_be_removed.neighbouring_coordinates
 
-    all_paths_with_cheat = find_all_paths(start, list(all_walls_positions_removed))
-    dj, _ = dijkstra(all_paths_with_cheat, start)
+    for nbr in element_coord_neighbours:
+        nbr_coord = Coordinates(nbr[0], nbr[1])
+        if nbr_coord not in all_walls_positions:
+            current_dict_for_nb = all_paths_with_cheat.get(nbr_coord, {})
+            current_dict_for_nb[this_coord_to_be_removed] = 1
 
-    shortes_path_cheats = dj[end]
+            all_paths_with_cheat[nbr_coord] = current_dict_for_nb
 
-    saved_time = shortes_path_cheats - initial_cost_no_cheats
-    if saved_time < 0:
-        solutions[element] = - saved_time
+            current_dict_for_nb2 = all_paths_with_cheat.get(this_coord_to_be_removed, {})
+            current_dict_for_nb2[nbr_coord] = 1
 
-print(solutions)
-output = []
-for sol_key, sol_val in solutions.items():
-    if sol_val > 100:
-        output.append({sol_key: sol_val})
+            all_paths_with_cheat[this_coord_to_be_removed] = current_dict_for_nb
 
-print(len(output))
+    if has_path_shorter_than(all_paths_with_cheat, start, end, int(threshold)):
+        solutions_count += 1
 
-# +11 -
+print(solutions_count)
+# --437
