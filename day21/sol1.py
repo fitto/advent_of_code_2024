@@ -105,7 +105,7 @@ def solve(input_table: List[str]) -> int:
         numeric_part = int(this_string[:-1])
 
         output += min_length * numeric_part
-        # print(min_length)
+        print(min_length)
         # print(numeric_part)
         # print('---------------------')
     return output
@@ -129,3 +129,4 @@ this_task = [
 
 x = solve(this_task)
 print(x)
+# --94 426
