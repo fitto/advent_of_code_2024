@@ -2,7 +2,29 @@ from collections import deque
 from typing import Dict, Set, List
 
 from day18.coordinates import Coordinates
-from day21.keypads.keypads import KEYPAD_BIG, KEYPAD_SMALL
+
+KEYPAD_BIG = {
+    '7': Coordinates(0, 0),
+    '8': Coordinates(0, 1),
+    '9': Coordinates(0, 2),
+    '4': Coordinates(1, 0),
+    '5': Coordinates(1, 1),
+    '6': Coordinates(1, 2),
+    '1': Coordinates(2, 0),
+    '2': Coordinates(2, 1),
+    '3': Coordinates(2, 2),
+    '0': Coordinates(3, 1),
+    'A': Coordinates(3, 2)
+}
+
+
+KEYPAD_SMALL = {
+    '^': Coordinates(0, 1),
+    'A': Coordinates(0, 2),
+    '<': Coordinates(1, 0),
+    'v': Coordinates(1, 1),
+    '>': Coordinates(1, 2)
+}
 
 POSSIBLE_MOVES = {
     "^": (-1, 0),
@@ -127,6 +149,7 @@ this_task = [
     '341A'
 ]
 
-x = solve(this_task)
+TEST = ['029A']
+x = solve(TEST)
 print(x)
 # --94426
