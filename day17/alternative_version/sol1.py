@@ -14,7 +14,6 @@ def read_all(file_name: str) -> tuple[dict[str, int], list[Any] | list[int]]:
     registers = {}
     registers_bin = {}
     program = []
-    program_bin = []
 
     with open(file_name, "r") as file:
         lines = file.readlines()
